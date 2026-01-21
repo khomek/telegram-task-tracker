@@ -14,6 +14,12 @@ class TaskRepository:
         return new_user
 
     @classmethod
+    async def get_user(cls, session:AsyncSession, user_id:int) -> User|None:
+        query = select(User).where(User.id == user_id)
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @classmethod
     async def add_task(cls, session: AsyncSession, task: TaskCreate, user_id: int) -> Task:
         task_dict = task.model_dump()
         new_task = Task(**task_dict, user_id = user_id)
@@ -23,7 +29,7 @@ class TaskRepository:
         return new_task
 
     @classmethod
-    async def get_tasks(cls, session:AsyncSession) -> list[Task]:
-        query = select(Task)
+    async def get_tasks(cls, session:AsyncSession, user_id: int) -> list[Task]:
+        query = select(Task).where(Task.user_id == user_id)
         result = await session.execute(query)
         return result.scalars().all()

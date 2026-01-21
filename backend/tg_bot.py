@@ -17,7 +17,7 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def cmd_start(message:types.Message):
     kb = [
-        [types.KeyboardButton(text = "Открыть Трекер", web_app = types.WebAppInfo(url = "https://github.com"))]
+        [types.KeyboardButton(text = "Открыть Трекер", web_app = types.WebAppInfo(url = f"{settings.WEBAPP_URL}"))]
     ]
     keyboard = types.ReplyKeyboardMarkup(keyboard = kb, resize_keyboard = True)
 

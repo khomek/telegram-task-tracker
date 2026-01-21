@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     DB_PASS:str
     DB_NAME:str
     BOT_TOKEN:str
+    WEBAPP_URL:str
 
     @property 
     def DATABASE_URL_asyncpg(self):
