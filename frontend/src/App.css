@@ -1,0 +1,227 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh; /* Минимальная высота - весь экран */
+  background-color: var(--bg-color);
+  overflow-x: hidden; /* Защита от горизонтального скролла всей страницы */
+}
+
+/* центрирует .app-conteiner */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;       
+  flex-direction: column;
+  align-items: center; 
+}
+
+:root {
+  --bg-color: #f0f4f8;
+  --column-bg: #dfe6ed;
+  --card-bg: #ffffff;
+  --text-main: #2c3e50;
+  --text-secondary: #7f8c8d;
+  
+  --color-todo: #3498db;
+  --color-progress: #f1c40f;
+  --color-done: #2ecc71;
+  --color-delete: #ff6b6b;
+}
+
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Главный контейнер --- */
+.app-container {
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px;
+  box-sizing: border-box; 
+  margin: 0;
+}
+
+h1 {
+  text-align: center;
+  font-weight: 800;
+  color: #34495e;
+  margin-bottom: 5px;
+}
+
+/* --- Форма создания задачи --- */
+.create-task-form {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 600px; /* Форма не должна быть слишком широкой */
+  margin-left: auto;
+  margin-right: auto; 
+}
+
+.create-task-form input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #edf2f7;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box; 
+ 
+}
+
+.create-task-form input:focus {
+  border-color: var(--color-todo);
+  background: #fff;
+}
+
+.add-btn {
+  background: var(--color-todo);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.add-btn:active { transform: scale(0.98); }
+
+/* --- Канбан Доска (ГРИД система) --- */
+.kanban-board {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* Колонка */
+.kanban-column {
+  flex: 1; 
+  background: var(--column-bg);
+  padding: 15px;
+  border-radius: 20px;
+  min-height: 200px; 
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+/* Карточка задачи */
+.task-card {
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 16px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+}
+
+.task-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0 0 5px 0;
+  word-wrap: break-word; 
+}
+
+.task-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 15px 0;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.btn-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.btn-move { background: #eef2f6; color: var(--text-main); }
+.btn-delete { color: var(--color-delete); }
+.btn-move:hover { background: #dce4eb; }
+
+/* --- Теги --- */
+.task-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.tag-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: #333;
+  font-weight: 600;
+  text-transform: lowercase;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+/*АДАПТИВНОСТЬ (MOBILE MEDIA QUERY)*/
+@media (max-width: 768px) {
+  
+  .app-container {
+    padding: 15px; 
+  }
+
+  .kanban-board {
+    flex-direction: column; 
+  }
+
+  .kanban-column {
+    width: 100%; /* Колонка на всю ширину экрана */
+    margin-bottom: 20px; /* Отступ между колонками */
+    box-sizing: border-box;
+  }
+
+  .create-task-form {
+    margin-bottom: 20px;
+    padding: 15px;
+  }
+}

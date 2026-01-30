@@ -1,17 +1,26 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
+class TagBase(BaseModel):
+    title: str
+
+class Tag(TagBase):
+    id:int
+    class Config:
+        from_attributes = True
 
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
 
 class TaskCreate(TaskBase):
-    pass
-
+    tags: Optional[List[str]] = []
+    
 class Task(TaskBase):
     id: int
-    is_completed: bool
+    status: str
     user_id: int
+    tags: List[Tag] =[]
     
     class Config:
         from_attributes = True
@@ -28,3 +37,4 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+

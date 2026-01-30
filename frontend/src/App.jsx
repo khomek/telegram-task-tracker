@@ -10,7 +10,8 @@ function App() {
   const [description, setDescription] = useState(""); //ее описание
   const [username, setUsername] = useState("Неизвестный");
   const [userId, setUserId] = useState(null);
-   const [debugLog, setDebugLog] = useState("Инициализация...");
+  const [debugLog, setDebugLog] = useState("Инициализация...");
+  const [tagInput, setTagInput] = useState("");
 
    
   useEffect(() => {
@@ -58,69 +59,200 @@ function App() {
       // alert("Введите название задачи!");
       return;
     }
-  
+  const tagsArray = tagInput
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
 
   try {
-    const response = await axios.post('/tasks', {title:title, description:description},{headers:{'x-telegram-id':userId}});
+    const response = await axios.post('/tasks', {title:title, description:description, tags: tagsArray},{headers:{'x-telegram-id':userId}});
     setTasks([...tasks, response.data]);
     setTitle("");
     setDescription("");
+    setTagInput("");
   } catch (error) {
     alert("Ошибка");
     setDebugLog((prev) => prev + `\nОшибка POST: ${error.message}`);
   }
 };
 
+// генерация цвета тега
+const getTagColor = (tagName) => {
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+        hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360; 
+    return `hsl(${h}, 70%, 80%)`;
+};
+
+  const handleDeleteTask = async (taskId) => {
+    try{
+      await axios.delete(`/tasks/${taskId}`, {
+        headers: {'x-telegram-id': userId}
+      });
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+    } catch (error) {
+      setDebugLog((prev) => prev+`/nОшибка DELETE: ${error.message}`);
+    }
+  };
+
+  const handleChangeStatus = async (taskId, newStatus) => {
+    try{
+      await axios.patch(`/tasks/${taskId}?status=${newStatus}`, null, {
+        headers: {'x-telegram-id': userId}
+      });
+
+      setTasks((prev) => prev.map((task) => {
+        if (task.id === taskId){
+          return {...task, status: newStatus};
+        }
+        return task;
+      }));
+    } catch(error){
+      setDebugLog((prev) => prev +  `\nОшибка PATCH: ${error.message}`);
+    }
+  };
+
+  // Фильтрация задач по колонкам
+  const todoTasks = tasks.filter(t => t.status === 'todo');
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
+  const doneTasks = tasks.filter(t => t.status === 'done');
+
+  // одна карточка
+  const TaskCard = ({ task }) => (
+    <div className="task-card">
+      <h3 className="task-title">{task.title}</h3>
+      {task.tags && task.tags.length > 0 && (
+        <div className="task-tags">
+          {task.tags.map(tag => (
+            <span 
+              key={tag.id} 
+              className="tag-badge"
+              style={{ backgroundColor: getTagColor(tag.title) }}
+            >
+              {tag.title}
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {task.description && <p className="task-desc">{task.description}</p>}
+      
+      <div className="card-actions">
+        {/* Кнопка Удалить */}
+        <button 
+          className="btn-action btn-delete" 
+          onClick={() => handleDeleteTask(task.id)}
+        >
+          🗑
+        </button>
+
+        {/* Кнопки перемещения */}
+        <div style={{ display: 'flex', gap: '5px' }}>
+         
+          {task.status === 'todo' && (
+            <button 
+              className="btn-action btn-move" 
+              onClick={() => handleChangeStatus(task.id, 'in_progress')}
+            >
+              Начать ▶
+            </button>
+          )}
+
+          {task.status === 'in_progress' && (
+            <>
+              <button 
+                className="btn-action btn-move" 
+                onClick={() => handleChangeStatus(task.id, 'todo')}
+              >
+                ◀
+              </button>
+              <button 
+                className="btn-action btn-move"
+                style={{ background: '#d1f2eb', color: '#27ae60' }} 
+                onClick={() => handleChangeStatus(task.id, 'done')}
+              >
+                Готово ✅
+              </button>
+            </>
+          )}
+
+          {task.status === 'done' && (
+            <button 
+              className="btn-action btn-move" 
+              onClick={() => handleChangeStatus(task.id, 'in_progress')}
+            >
+              ↺ Вернуть
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   // Отрисовка (HTML)
   return (
     <div className="app-container">
-       {/* --- БЛОК ОТЛАДКИ (ПОТОМ УДАЛИть)--- */}
-      <div style={{ background: '#333', color: '#0f0', padding: '10px', fontSize: '12px', marginBottom: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-        <strong>DEBUG LOG:</strong><br/>
-        {debugLog}
-      </div>
-      {/* ---------------------------------- */}
-      <h1 align= 'center'>Привет, {username}!</h1>
-      <small style={{color:'gray'}}>Твой ID:{userId||"Не определен"}</small>
-      <h1>Твой список задач:</h1>
+      <h1>Task Tracker</h1>
+      <p style = {{textAlign: 'center', color: '#999', fontSize: '12px'}}>
+        {username} (ID: {userId})
+      </p>
 
       {/* создание задачи */}
-      <form onSubmit={handleCreateTask} style = {{ marginBottom: '20px', padding: '10px', border: '1px solid #eee' }}>
-        <div>
-          <input
-            type = "text"
-            placeholder = "Название задачи"
-            value = {title}
-            onChange={(e) => setTitle(e.target.value)}
-            style={{ padding: '8px', marginRight: '10px' }}
-            />
-        </div>
-        <div style={{ margintop:'10px' }}>
-          <input
-            type="text"
-            placeholder='Описание задачи(необязательно)'
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            style={{ padding: '8px', marginRight: '10px' }} />
-        </div>
-        <button type="submit" style={{ marginTop: '10px', padding: '8px 16px', cursor: 'pointer'}}>
-          Добавить 
-        </button>
-        </form>
+      <form onSubmit={handleCreateTask} className='create-task-form'> 
+        <input
+          type="text"
+          placeholder="Что нужно сделать?"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Описание (необязательно)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+         <input
+          type="text"
+          placeholder="Теги (через запятую: работа, срочно)"
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+        />
+        <button type="submit" className="add-btn">Добавить задачу</button>
+      </form>
       
-      {tasks.length === 0 && <p>Задач пока нет</p>}
-
-      <div className="task-list">
-        {tasks.map((task) => (
-          <div key={task.id} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px', borderRadius: '5px'}}>
-            <h3 style ={{ textDecoration: task.is_completed ? 'line-through' : 'none'}}> 
-              {task.title}
-            </h3>
-            <p>{task.description}</p>
-             <small>Статус: {task.is_completed ? "✅ Готово" : "⏳ В процессе"}</small> 
+      {/* Канбан Доска */}
+      <div className="kanban-board">
+        
+        {/* Колонка TODO */}
+        <div className="kanban-column">
+          <div className="column-header">
+            <span className="dot" style={{background: 'var(--color-todo)'}}></span>
+            Нужно сделать ({todoTasks.length})
           </div>
-        ))}
-            
+          {todoTasks.map(task => <TaskCard key={task.id} task={task} />)}
+          {todoTasks.length === 0 && <div style={{color:'#999', fontSize:'12px', textAlign:'center'}}>Пусто</div>}
+        </div>
+
+        {/* Колонка IN PROGRESS */}
+        <div className="kanban-column">
+          <div className="column-header">
+            <span className="dot" style={{background: 'var(--color-progress)'}}></span>
+            В процессе ({inProgressTasks.length})
+          </div>
+          {inProgressTasks.map(task => <TaskCard key={task.id} task={task} />)}
+        </div>
+
+        {/* Колонка DONE */}
+        <div className="kanban-column">
+          <div className="column-header">
+            <span className="dot" style={{background: 'var(--color-done)'}}></span>
+            Готово ({doneTasks.length})
+          </div>
+          {doneTasks.map(task => <TaskCard key={task.id} task={task} />)}
+        </div>
+
       </div>
     </div>
   )

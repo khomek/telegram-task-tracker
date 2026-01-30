@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Header, HTTPException
+from fastapi import FastAPI, Depends, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware 
 from contextlib import asynccontextmanager
 from database import engine, Base, get_db
@@ -65,3 +65,26 @@ async def get_tasks(
 ):
     tasks = await TaskRepository.get_tasks(session, user_id = user.id)
     return tasks
+
+@app.patch("/tasks/{task_id}", response_model=TaskSchema)
+async def update_task_status(
+    task_id: int,
+    status: str,
+    session: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    updated_task = await TaskRepository.update_task_status(session, task_id, status)
+    if not updated_task:
+        raise HTTPException(status_code=404, detail = "Задача не найдена")
+    return updated_task
+
+@app.delete("/tasks/{task_id}")
+async def delete_task(
+    task_id:int,
+    session:AsyncSession=Depends(get_db),
+    user:User=Depends(get_current_user)
+):
+    is_deleted = await TaskRepository.delete_task(session,task_id)
+    if not is_deleted:
+        raise HTTPException(status_code=404, detail = "Задача не найдена")
+    return {"detail":"Задача удалена"}

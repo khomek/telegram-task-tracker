@@ -27,7 +27,7 @@ class Task(Base):
     id: Mapped[int] = mapped_column(primary_key = True)
     title: Mapped[str] = mapped_column()
     description: Mapped[Optional[str]] = mapped_column()
-    is_completed: Mapped[bool] = mapped_column(default=False)
+    status: Mapped[str] = mapped_column(default="todo")
     created_at: Mapped[datetime] = mapped_column(server_default = text("TIMEZONE('utc', now())"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
