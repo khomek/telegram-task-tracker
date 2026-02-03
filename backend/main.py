@@ -6,7 +6,8 @@ from models import User, Task, Tag
 from schemas import TaskCreate, Task as TaskSchema, UserCreate, User as UserSchema
 from repository import TaskRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List,Annotated
+from typing import List,Annotated, Optional
+from datetime import date
 
 #Управление включением/выключением приложения
 @asynccontextmanager
@@ -60,10 +61,11 @@ async def create_task(
 
 @app.get("/tasks", response_model = List[TaskSchema])
 async def get_tasks(
+    target_date:Optional[date] = None,
     session: AsyncSession = Depends(get_db),
     user:User=Depends(get_current_user)
 ):
-    tasks = await TaskRepository.get_tasks(session, user_id = user.id)
+    tasks = await TaskRepository.get_tasks(session, user_id = user.id, date_filter=target_date)
     return tasks
 
 @app.patch("/tasks/{task_id}", response_model=TaskSchema)

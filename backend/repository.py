@@ -3,6 +3,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Task, User, Tag
 from schemas import TaskCreate, UserCreate
+from datetime import date
 
 class TaskRepository:
 
@@ -55,13 +56,15 @@ class TaskRepository:
         return result.scalar_one()
 
     @classmethod
-    async def get_tasks(cls, session: AsyncSession, user_id: int) -> list[Task]:
+    async def get_tasks(cls, session: AsyncSession, user_id: int, date_filter:date=None) -> list[Task]:
         
         query = (
             select(Task)
             .options(selectinload(Task.tags))
             .where(Task.user_id == user_id)
         )
+        if date_filter:
+            query = query.where(Task.due_date == date_filter)
         result = await session.execute(query)
         return result.scalars().all()
 

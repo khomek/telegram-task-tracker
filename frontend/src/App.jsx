@@ -3,6 +3,12 @@ import axios from 'axios'
 import './App.css'
 
 const tg = window.Telegram?.WebApp  || {};
+const formatDate = (dateObj) => {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth()+1).padStart(2,'0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 function App() {
   const [tasks, setTasks] = useState([]); //список задач
@@ -12,6 +18,8 @@ function App() {
   const [userId, setUserId] = useState(null);
   const [debugLog, setDebugLog] = useState("Инициализация...");
   const [tagInput, setTagInput] = useState("");
+  const [currentDate, setCurrentDate] = useState(new Date());
+
 
    
   useEffect(() => {
@@ -28,22 +36,24 @@ function App() {
     if (user){
       setUsername(user.username ||user.first_name);
       setUserId(user.id);
-      fetchTasks(user.id);
+      fetchTasks(user.id, currentDate);
     }else{
       setDebugLog((prev) => prev + "\n\n⚠️ Юзер не найден. Включаю тестовый режим (ID=12345).");
       setUsername("Тестовый Юзер");
       setUserId(12345);
-      fetchTasks(12345);
+      fetchTasks(12345, currentDate);
     }
     
-  }, []); 
+  }, [currentDate]); //  зависимость от даты
 
   // Функция, которая идет на сервер
-  const fetchTasks = async (currentUserId) => {
+  const fetchTasks = async (userId, dateObj) => {
     try {
+      const dateStr = formatDate(dateObj); 
       // Делаем GET запрос на /tasks
-      const response = await axios.get('/tasks', {headers: {
-        'x-telegram-id': currentUserId}
+      const response = await axios.get('/tasks', {
+        headers: {'x-telegram-id': userId},
+        params:{target_date:dateStr}
       });
       if(Array.isArray(response.data)) setTasks(response.data);
       else setTasks([]);
@@ -63,9 +73,10 @@ function App() {
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0);
+  const dateToSend = formatDate(currentDate);
 
   try {
-    const response = await axios.post('/tasks', {title:title, description:description, tags: tagsArray},{headers:{'x-telegram-id':userId}});
+    const response = await axios.post('/tasks', {title:title, description:description, tags: tagsArray, due_date: dateToSend},{headers:{'x-telegram-id':userId}});
     setTasks([...tasks, response.data]);
     setTitle("");
     setDescription("");
@@ -74,6 +85,12 @@ function App() {
     alert("Ошибка");
     setDebugLog((prev) => prev + `\nОшибка POST: ${error.message}`);
   }
+};
+
+const changeDate = (days) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() + days);
+    setCurrentDate(newDate);
 };
 
 // генерация цвета тега
@@ -199,6 +216,35 @@ const getTagColor = (tagName) => {
         {username} (ID: {userId})
       </p>
 
+      {/* --- Блок Навигации по Датам --- */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
+        
+        <button 
+          onClick={() => changeDate(-1)}
+          style={{ padding: '10px 15px', borderRadius: '10px', border: 'none', background: '#e0e0e0', cursor: 'pointer', fontSize: '18px' }}
+        >
+          ◀
+        </button>
+
+        <h2 style={{ margin: 0, minWidth: '150px', textAlign: 'center' }}>
+          {currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+        </h2>
+
+        <button 
+          onClick={() => changeDate(1)}
+          style={{ padding: '10px 15px', borderRadius: '10px', border: 'none', background: '#e0e0e0', cursor: 'pointer', fontSize: '18px' }}
+        >
+          ▶
+        </button>
+      </div>
+      
+      {/* Кнопка "Сегодня", если ушли далеко */}
+      <div style={{textAlign: 'center', marginBottom: '20px'}}>
+         <button onClick={() => setCurrentDate(new Date())} style={{background: 'none', border:'1px solid #ccc', padding: '5px 10px', borderRadius:'15px', cursor:'pointer'}}>
+            Вернуться к "Сегодня"
+         </button>
+      </div>
+
       {/* создание задачи */}
       <form onSubmit={handleCreateTask} className='create-task-form'> 
         <input
@@ -242,6 +288,7 @@ const getTagColor = (tagName) => {
             В процессе ({inProgressTasks.length})
           </div>
           {inProgressTasks.map(task => <TaskCard key={task.id} task={task} />)}
+          {inProgressTasks.length === 0 && <div style={{color:'#999', fontSize:'12px', textAlign:'center'}}>Пусто</div>}
         </div>
 
         {/* Колонка DONE */}
@@ -251,6 +298,7 @@ const getTagColor = (tagName) => {
             Готово ({doneTasks.length})
           </div>
           {doneTasks.map(task => <TaskCard key={task.id} task={task} />)}
+          {doneTasks.length === 0 && <div style={{color:'#999', fontSize:'12px', textAlign:'center'}}>Пусто</div>}
         </div>
 
       </div>

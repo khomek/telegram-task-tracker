@@ -4,12 +4,13 @@ from datetime import datetime
 from typing import List, Optional
 from database import Base
 from sqlalchemy import Table, Column, Integer
+from datetime import datetime, date 
 
 tasks_and_tags_table = Table(
     "tasks_and_tags", 
     Base.metadata,
-    Column("task_id", Integer, ForeignKey("tasks.id"), primary_key = True),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key = True)
+    Column("task_id", Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key = True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key = True)
 )
 
 class User(Base):
@@ -28,6 +29,7 @@ class Task(Base):
     title: Mapped[str] = mapped_column()
     description: Mapped[Optional[str]] = mapped_column()
     status: Mapped[str] = mapped_column(default="todo")
+    due_date: Mapped[Optional[date]] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default = text("TIMEZONE('utc', now())"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
